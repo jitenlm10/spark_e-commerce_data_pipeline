@@ -1,0 +1,110 @@
+services:
+  spark-master:
+    image: bitnamilegacy/spark:3.5.1
+    container_name: spark-master
+    environment:
+      - SPARK_MODE=master
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+    ports:
+      - "8080:8080"  # Spark Master Web UI
+      - "7077:7077"  # Spark Master Internal Port
+    volumes:
+      - ./:/opt/bitnami/spark/project
+
+  spark-worker-1:
+    image: bitnamilegacy/spark:3.5.1
+    container_name: spark-worker-1
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+      - SPARK_WORKER_MEMORY=2G
+      - SPARK_WORKER_CORES=2
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+    volumes:
+      - ./:/opt/bitnami/spark/project
+    depends_on:
+      - spark-master
+
+  spark-worker-2:
+    image: bitnamilegacy/spark:3.5.1
+    container_name: spark-worker-2
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+      - SPARK_WORKER_MEMORY=2G
+      - SPARK_WORKER_CORES=2
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+    volumes:
+      - ./:/opt/bitnami/spark/project
+    depends_on:
+      - spark-master
+
+  jupyter:
+    image: jupyter/pyspark-notebook:latest
+    container_name: jupyter
+    ports:
+      - "8888:8888"  # Jupyter Notebook UI
+      - "4040:4040"  # Spark Web UI
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+    volumes:
+      - ./:/home/jovyan/work
+
+
+#version: '3.8'
+#
+#services:
+#  spark-master:
+#    image: bitnami/spark:3.5
+#    container_name: spark-master
+#    environment:
+#      - SPARK_MODE=master
+#      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+#      - SPARK_RPC_ENCRYPTION_ENABLED=no
+#    ports:
+#      - "8080:8080"    # Spark Master Web UI
+#      - "7077:7077"    # Spark master port (workers connect here)
+#      - "4040:4040"    # Spark Application UI
+#    volumes:
+#      - ./data:/opt/bitnami/spark/data
+#      - ./jobs:/opt/bitnami/spark/jobs
+#      - ./output:/opt/bitnami/spark/output
+#
+#  spark-worker-1:
+#    image: bitnami/spark:3.5
+#    container_name: spark-worker-1
+#    environment:
+#      - SPARK_MODE=worker
+#      - SPARK_MASTER_URL=spark://spark-master:7077
+#      - SPARK_WORKER_MEMORY=2G
+#      - SPARK_WORKER_CORES=2
+#    depends_on:
+#      - spark-master
+#    volumes:
+#      - ./data:/opt/bitnami/spark/data
+#      - ./jobs:/opt/bitnami/spark/jobs
+#      - ./output:/opt/bitnami/spark/output
+#
+#  spark-worker-2:
+#    image: bitnami/spark:3.5
+#    container_name: spark-worker-2
+#    environment:
+#      - SPARK_MODE=worker
+#      - SPARK_MASTER_URL=spark://spark-master:7077
+#      - SPARK_WORKER_MEMORY=2G
+#      - SPARK_WORKER_CORES=2
+#    depends_on:
+#      - spark-master
+#    volumes:
+#      - ./data:/opt/bitnami/spark/data
+#      - ./jobs:/opt/bitnami/spark/jobs
+#      - ./output:/opt/bitnami/spark/output
