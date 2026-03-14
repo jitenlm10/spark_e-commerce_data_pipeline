@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.pyc
+
+# Virtual environments
+.venv/
+.venv-1/
+venv/
+env/
+
+# Spark outputs
+data/
+cleaned/
+output/
+
+# Datasets
+*.csv
+*.parquet
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
