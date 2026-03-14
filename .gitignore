@@ -8,21 +8,22 @@ __pycache__/
 venv/
 env/
 
-# Spark outputs
-data/
-cleaned/
-output/
-
-# Datasets
-*.csv
-*.parquet
-
 # Jupyter
 .ipynb_checkpoints/
 
 # IDE
-.idea/
 .vscode/
+.idea/
+
+# Data and outputs
+data/
+cleaned/
+output/
+frontend_data/
+
+# Large files
+*.csv
+*.parquet
 
 # OS
 .DS_Store
