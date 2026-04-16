@@ -1,65 +1,124 @@
 from pathlib import Path
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, avg, stddev, when, lit
+from pyspark.sql.functions import (
+    col,
+    avg,
+    stddev,
+    when,
+    lit,
+    sum as _sum,
+    round,
+    unix_timestamp,
+    concat,
+)
 from pyspark.sql.window import Window
 
-print("Initializing Spark Session for Anomaly Detection...")
 
-spark = SparkSession.builder \
-    .appName("AnomalyDetection") \
-    .getOrCreate()
+def main():
+    print("Initializing Spark Session for Anomaly Detection...")
+    spark = SparkSession.builder.appName("Stage5_AnomalyDetection").getOrCreate()
 
-base_path = Path(__file__).resolve().parent.parent
+    # Local VS Code path
+    base_path = "/home/jovyan/work"
 
-print("Loading funnel metrics...")
+    print("Loading funnel metrics...")
+    funnel_df = spark.read.parquet(str(base_path / "output" / "funnel_metrics"))
 
-funnel_df = spark.read.parquet(str(base_path / "output" / "funnel_metrics"))
-
-print("Building rolling baseline...")
-
-window_spec = Window.partitionBy("category").orderBy("date").rowsBetween(-7, -1)
-
-baseline_df = funnel_df.withColumn(
-    "rolling_avg_conversion",
-    avg("overall_conversion_rate").over(window_spec)
-).withColumn(
-    "rolling_std_conversion",
-    stddev("overall_conversion_rate").over(window_spec)
-)
-
-print("Computing deviation and anomaly flags...")
-
-result_df = baseline_df.withColumn(
-    "z_score",
-    when(
-        col("rolling_std_conversion").isNull() | (col("rolling_std_conversion") == 0),
-        lit(None)
-    ).otherwise(
-        (col("overall_conversion_rate") - col("rolling_avg_conversion")) / col("rolling_std_conversion")
+    # ==========================================
+    # 1. DAILY AGGREGATION
+    # ==========================================
+    print("Aggregating metrics to a daily category level...")
+    daily_category_df = (
+        funnel_df.groupBy("date", "category")
+        .agg(
+            _sum("total_views").alias("daily_views"),
+            _sum("total_purchases").alias("daily_purchases"),
+        )
+        .withColumn(
+            "daily_conversion_rate",
+            when(
+                col("daily_views") > 0,
+                round(col("daily_purchases") / col("daily_views"), 4),
+            ).otherwise(lit(0.0)),
+        )
     )
-)
 
-result_df = result_df.withColumn(
-    "anomaly_flag",
-    when(col("z_score") > 2, "spike").otherwise("normal")
-)
+    # ==========================================
+    # 2. ROLLING 7-DAY BASELINE
+    # ==========================================
+    print("Calculating trailing 7-day moving averages...")
+    days_back_7 = -7 * 86400
+    yesterday = -86400
 
-print("Filtering anomaly rows only...")
+    rolling_window = (
+        Window.partitionBy("category")
+        .orderBy(unix_timestamp(col("date")))
+        .rangeBetween(days_back_7, yesterday)
+    )
 
-anomalies_df = result_df.filter(col("z_score") > 2)
+    with_baseline = daily_category_df.withColumn(
+        "trailing_7d_avg",
+        round(avg("daily_conversion_rate").over(rolling_window), 4),
+    )
 
-print("Saving full anomaly analysis...")
+    # ==========================================
+    # 3. VARIANCE & THRESHOLDING
+    # ==========================================
+    print("Detecting spikes and drops...")
+    with_variance = with_baseline.withColumn(
+        "pct_change_from_baseline",
+        when(
+            col("trailing_7d_avg") > 0,
+            round(
+                (
+                    (col("daily_conversion_rate") - col("trailing_7d_avg"))
+                    / col("trailing_7d_avg")
+                )
+                * 100,
+                2,
+            ),
+        ).otherwise(lit(0.0)),
+    )
 
-result_df.write.mode("overwrite").parquet(
-    str(base_path / "output" / "anomaly_metrics")
-)
+    anomalies = with_variance.filter(
+        (col("pct_change_from_baseline") <= -50.0)
+        | (col("pct_change_from_baseline") >= 50.0)
+    )
 
-print("Saving detected anomalies only...")
+    # ==========================================
+    # 4. GENERATE EXPLANATIONS
+    # ==========================================
+    print("Generating automated explanations...")
+    final_anomalies = (
+        anomalies.withColumn(
+            "anomaly_type",
+            when(col("pct_change_from_baseline") > 0, "SPIKE").otherwise("DROP"),
+        )
+        .withColumn(
+            "explanation",
+            concat(
+                lit("ALERT: "),
+                col("category"),
+                lit(" conversion "),
+                when(col("anomaly_type") == "SPIKE", lit("spiked by +")).otherwise(
+                    lit("dropped by ")
+                ),
+                col("pct_change_from_baseline").cast("string"),
+                lit("% compared to the 7-day baseline of "),
+                col("trailing_7d_avg").cast("string"),
+            ),
+        )
+        .orderBy("date", "category")
+    )
 
-anomalies_df.write.mode("overwrite").parquet(
-    str(base_path / "output" / "anomalies_only")
-)
+    print("Saving anomalies to output folder...")
+    final_anomalies.coalesce(1).write.mode("overwrite").parquet(
+        str(base_path / "output" / "anomalies")
+    )
 
-print("Stage 5 Anomaly Detection Complete!")
+    print("Stage 5 Anomaly Detection Complete!")
+    spark.stop()
 
-spark.stop()
+
+if __name__ == "__main__":
+    main()

@@ -20,7 +20,7 @@ services:
     environment:
       - SPARK_MODE=worker
       - SPARK_MASTER_URL=spark://spark-master:7077
-      - SPARK_WORKER_MEMORY=2G
+      - SPARK_WORKER_MEMORY=4G
       - SPARK_WORKER_CORES=2
       - SPARK_RPC_AUTHENTICATION_ENABLED=no
       - SPARK_RPC_ENCRYPTION_ENABLED=no
@@ -37,7 +37,7 @@ services:
     environment:
       - SPARK_MODE=worker
       - SPARK_MASTER_URL=spark://spark-master:7077
-      - SPARK_WORKER_MEMORY=2G
+      - SPARK_WORKER_MEMORY=4G
       - SPARK_WORKER_CORES=2
       - SPARK_RPC_AUTHENTICATION_ENABLED=no
       - SPARK_RPC_ENCRYPTION_ENABLED=no
@@ -47,6 +47,40 @@ services:
       - ./:/opt/bitnami/spark/project
     depends_on:
       - spark-master
+
+  spark-worker-3:
+    image: bitnamilegacy/spark:3.5.1
+    container_name: spark-worker-3
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+      - SPARK_WORKER_MEMORY=4G
+      - SPARK_WORKER_CORES=2
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+    volumes:
+      - ./:/opt/bitnami/spark/project
+    depends_on:
+      - spark-master
+
+#  spark-worker-4:
+#    image: bitnamilegacy/spark:3.5.1
+#    container_name: spark-worker-4
+#    environment:
+#      - SPARK_MODE=worker
+#      - SPARK_MASTER_URL=spark://spark-master:7077
+#      - SPARK_WORKER_MEMORY=2G
+#      - SPARK_WORKER_CORES=2
+#      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+#      - SPARK_RPC_ENCRYPTION_ENABLED=no
+#      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+#      - SPARK_SSL_ENABLED=no
+#    volumes:
+#      - ./:/opt/bitnami/spark/project
+#    depends_on:
+#      - spark-master
 
   jupyter:
     image: jupyter/pyspark-notebook:latest
@@ -100,7 +134,7 @@ services:
 #    environment:
 #      - SPARK_MODE=worker
 #      - SPARK_MASTER_URL=spark://spark-master:7077
-#      - SPARK_WORKER_MEMORY=2G
+#      - SPARK_WORKER_MEMORY=4G
 #      - SPARK_WORKER_CORES=2
 #    depends_on:
 #      - spark-master

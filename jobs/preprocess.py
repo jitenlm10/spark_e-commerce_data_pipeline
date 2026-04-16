@@ -2,18 +2,16 @@ from pathlib import Path
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, to_timestamp, lower, trim
 
-
 def main():
     print("Initializing Spark Session for Preprocessing...")
     spark = SparkSession.builder.appName("Stage1_Preprocessing").getOrCreate()
-
     num_partitions = int(spark.conf.get("spark.sql.shuffle.partitions", "8"))
-    base_path = Path(__file__).resolve().parent.parent
+    base_path = "/home/jovyan/work"
 
     print("Loading core CSV files...")
-    events_raw = spark.read.csv(str(base_path / "data" / "events.csv"), header=True, inferSchema=True)
-    transactions_raw = spark.read.csv(str(base_path / "data" / "transactions.csv"), header=True, inferSchema=True)
-    products_raw = spark.read.csv(str(base_path / "data" / "products.csv"), header=True, inferSchema=True)
+    events_raw = spark.read.csv(f"{base_path}/data/events_massive", header=True, inferSchema=True)
+    transactions_raw = spark.read.csv(f"{base_path}/data/transactions_massive", header=True, inferSchema=True)
+    products_raw = spark.read.csv(f"{base_path}/data/products.csv", header=True, inferSchema=True)
 
     # ==========================================
     # 1. FORMAT 'EVENTS'
@@ -27,7 +25,7 @@ def main():
         col("product_id"),
         col("session_id"),
         lower(trim(col("device_type"))).alias("device"),
-        col("traffic_source").alias("referrer")
+        lower(trim(col("traffic_source"))).alias("referrer")
     ).dropna(subset=["user_id", "timestamp", "event_type"])
 
     # ==========================================
@@ -59,16 +57,16 @@ def main():
     # ==========================================
     print("Saving strictly aligned Parquet files...")
 
-    cleaned_path = base_path / "cleaned"
-
+    # Partition the large tables by user_id to optimize downstream windowing and joins
     events_clean.repartition(num_partitions, "user_id") \
-        .write.mode("overwrite").parquet(str(cleaned_path / "events_clean"))
+        .write.mode("overwrite").parquet(f"{base_path}/cleaned/events_clean")
 
     orders_clean.repartition(num_partitions, "user_id") \
-        .write.mode("overwrite").parquet(str(cleaned_path / "orders_clean"))
+        .write.mode("overwrite").parquet(f"{base_path}/cleaned/orders_clean")
 
+    # Catalog is tiny, no need to partition
     catalog_clean.coalesce(1) \
-        .write.mode("overwrite").parquet(str(cleaned_path / "catalog_clean"))
+        .write.mode("overwrite").parquet(f"{base_path}/cleaned/catalog_clean")
 
     print("Stage 1 Preprocessing Complete!")
     spark.stop()
