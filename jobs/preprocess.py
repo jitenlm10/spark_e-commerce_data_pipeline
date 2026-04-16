@@ -1,3 +1,4 @@
+from pathlib import Path
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, to_timestamp, lower, trim
 
@@ -5,11 +6,11 @@ def main():
     print("Initializing Spark Session for Preprocessing...")
     spark = SparkSession.builder.appName("Stage1_Preprocessing").getOrCreate()
     num_partitions = int(spark.conf.get("spark.sql.shuffle.partitions", "8"))
-    base_path = "/opt/bitnami/spark/project"
+    base_path = "/home/jovyan/work"
 
     print("Loading core CSV files...")
-    events_raw = spark.read.csv(f"{base_path}/data/events.csv", header=True, inferSchema=True)
-    transactions_raw = spark.read.csv(f"{base_path}/data/transactions.csv", header=True, inferSchema=True)
+    events_raw = spark.read.csv(f"{base_path}/data/events_massive", header=True, inferSchema=True)
+    transactions_raw = spark.read.csv(f"{base_path}/data/transactions_massive", header=True, inferSchema=True)
     products_raw = spark.read.csv(f"{base_path}/data/products.csv", header=True, inferSchema=True)
 
     # ==========================================
@@ -24,7 +25,7 @@ def main():
         col("product_id"),
         col("session_id"),
         lower(trim(col("device_type"))).alias("device"),
-        col("traffic_source").alias("referrer")
+        lower(trim(col("traffic_source"))).alias("referrer")
     ).dropna(subset=["user_id", "timestamp", "event_type"])
 
     # ==========================================

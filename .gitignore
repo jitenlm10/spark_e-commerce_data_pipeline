@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.pyc
+
+# Virtual environments
+.venv/
+.venv-1/
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+
+# Data and outputs
+data/
+cleaned/
+output/
+frontend_data/
+
+# Large files
+*.csv
+*.parquet
+
+# OS
+.DS_Store
+Thumbs.db

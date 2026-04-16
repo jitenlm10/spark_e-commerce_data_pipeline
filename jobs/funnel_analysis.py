@@ -1,3 +1,4 @@
+from pathlib import Path
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, to_date, when, max as _max, sum as _sum, broadcast, round
 
@@ -6,7 +7,7 @@ def main():
     print("Initializing Spark Session for Funnel Analysis...")
     spark = SparkSession.builder.appName("Stage3_FunnelAnalysis").getOrCreate()
     # num_partitions = int(spark.conf.get("spark.sql.shuffle.partitions", "8"))
-    base_path = "/opt/bitnami/spark/project"
+    base_path = "/home/jovyan/work"
 
     print("Loading sessionized events and catalog Parquet files...")
     events_df = spark.read.parquet(f"{base_path}/output/events_with_sessions")
