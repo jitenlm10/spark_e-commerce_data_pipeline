@@ -1,4 +1,3 @@
-from pathlib import Path
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, to_date, when, max as _max, sum as _sum, broadcast, round
 
@@ -6,25 +5,20 @@ from pyspark.sql.functions import col, to_date, when, max as _max, sum as _sum, 
 def main():
     print("Initializing Spark Session for Funnel Analysis...")
     spark = SparkSession.builder.appName("Stage3_FunnelAnalysis").getOrCreate()
-    # num_partitions = int(spark.conf.get("spark.sql.shuffle.partitions", "8"))
-    base_path = "/home/jovyan/work"
+    base_path = "/opt/bitnami/spark/project"
 
     print("Loading sessionized events and catalog Parquet files...")
     events_df = spark.read.parquet(f"{base_path}/output/events_with_sessions")
     catalog_df = spark.read.parquet(f"{base_path}/cleaned/catalog_clean")
 
-    # ==========================================
     # 1. BROADCAST JOIN & DATE EXTRACTION
-    # ==========================================
     print("Extracting date and performing Broadcast Join with Catalog...")
     events_with_date = events_df.withColumn("date", to_date(col("timestamp")))
 
     # Broadcast the small catalog to all workers to avoid a shuffle here
     events_enriched = events_with_date.join(broadcast(catalog_df), on="product_id", how="left")
 
-    # ==========================================
     # 2. SESSION-LEVEL AGGREGATION (Pre-computation)
-    # ==========================================
     print("Calculating funnel progression per session...")
     # Did this specific session view, cart, or purchase this specific category?
     session_flags = events_enriched.groupBy("session_id", "category", "device", "referrer", "date").agg(
@@ -33,9 +27,7 @@ def main():
         _max(when(col("event_type") == "purchase", 1).otherwise(0)).alias("has_purchase")
     )
 
-    # ==========================================
     # 3. DISTRIBUTED SHUFFLE & AGGREGATION
-    # ==========================================
     print("Triggering distributed shuffle to calculate daily conversion metrics...")
     # This groupBy forces data to move across the network so identical groupings land on the same worker
     funnel_metrics = session_flags.groupBy("category", "device", "referrer", "date").agg(
@@ -44,9 +36,7 @@ def main():
         _sum("has_purchase").alias("total_purchases")
     )
 
-    # ==========================================
     # 4. CONVERSION RATE MATH
-    # ==========================================
     print("Calculating final conversion rates...")
     funnel_final = funnel_metrics.withColumn(
         "view_to_cart_rate",
