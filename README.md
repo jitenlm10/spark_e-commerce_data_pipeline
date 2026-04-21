@@ -1,16 +1,20 @@
+
 ***
 
 ```markdown
 # Distributed E-Commerce Data Analytics Pipeline
 
-## Initial Data Setup (Required)
-**You must download the data before running the pipeline.**
+## Project Overview
+---
+
+## Initial Setup (Required)
+**You must download the dataset before running the pipeline.**
 
 1. **Download the Dataset:** Download the raw CSV files from Kaggle here: [Marketing and E-Commerce Analytics Dataset](https://www.kaggle.com/datasets/geethasagarbonthu/marketing-and-e-commerce-analytics-dataset?select=events.csv).
 2. **Create the Data Folder:** Create a new folder named `data` in the root directory of this project.
 3. **Insert the Files:** Extract the downloaded files and place `events.csv`, `transactions.csv`, and `products.csv` directly into the `data` folder.
 
-Your repository structure should look  like this before pipeline execution:
+Your repository structure should look like this before pipeline execution:
 
 ```text
 📦 project_root
@@ -43,12 +47,12 @@ This project relies entirely on containerization to ensure strict reproducibilit
 ## Step-by-Step Execution Guide
 
 ### Phase 1: Bootstrapping the Cluster
-Open your terminal in the root directory of this project and execute the following command to provision the Spark Master and Worker nodes:
+Open your terminal in the root directory of this project and execute the following command to provision the Spark Master and Worker nodes, alongside the Jupyter environment:
 
 ```bash
 docker-compose up -d
 ```
-*Note: You can verify the cluster is active by running `docker ps` to ensure `spark-master`, `spark-worker-1`, and `spark-worker-2` are running.*
+*Note: You can verify the cluster is active by running `docker ps` to ensure `spark-master`, `spark-worker-1`, `spark-worker-2`, and `jupyter` are running.*
 
 ### Phase 2: Massive Data Generation (One-Time Setup)
 To evaluate the pipeline at a distributed scale, you must first generate the 40-million-row (4 GB) dataset. **This command only needs to be run once.** It uses distributed array explosion to scale the baseline CSVs into massive datasets optimized for stress-testing the network.
@@ -80,13 +84,16 @@ While `run_pipeline.ps1` is executing, you can monitor the distributed cluster's
 
 ---
 
-## Business Analytics & Results (Jupyter)
+## Business Analytics & Results (Jupyter Localhost)
 Once the pipeline finishes executing, the fully aggregated and compressed Parquet files will be dynamically generated inside an `/output` folder. 
 
-To view the final business metrics (Conversion Funnels, Revenue Attribution, and Anomaly Detection):
-1. Open `output_visualization.ipynb` in your local Jupyter environment (or any IDE that supports `.ipynb` files like VS Code).
-2. Click **"Run All Cells"**.
-3. Pandas and Matplotlib will ingest the finalized PySpark outputs to instantly generate the analytical charts and the distributed scaling performance comparisons.
+To view the final business metrics (Conversion Funnels, Revenue Attribution, and Anomaly Detection), we will use the dedicated Jupyter container built into the cluster:
+
+1. Check the terminal where you initially ran the `docker-compose` command. Look for a log line that says `Jupyter Server is running at:`.
+2. Copy the URL provided in the logs that looks similar to this: **`http://127.0.0.1:8888/lab?token=<your_unique_token>`** and paste it into your web browser. *(If you closed the terminal window, you can retrieve the link at any time by running `docker logs jupyter`)*.
+3. In the Jupyter web interface, locate and open **`output_visualization.ipynb`**.
+4. In the top menu bar, click **Run > Run All Cells** (or the double-play `Restart & Run All` button).
+5. Pandas and Matplotlib will ingest the finalized PySpark outputs to instantly generate the analytical charts and the distributed scaling performance comparisons.
 
 ---
 
