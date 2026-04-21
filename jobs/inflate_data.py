@@ -5,7 +5,7 @@ from pyspark.sql.functions import col, lit, concat, explode, array
 def main():
     print("Initializing Advanced Data Inflation Script...")
     spark = SparkSession.builder.appName("Data_Multiplier").getOrCreate()
-    base_path = "/home/jovyan/work"
+    base_path = "/opt/bitnami/spark/project"
 
     print("Loading original raw data...")
     events_raw = spark.read.csv(f"{base_path}/data/events.csv", header=True)
@@ -15,16 +15,14 @@ def main():
     multiplier = 10
     print(f"Multiplying dataset by {multiplier}x using distributed array explosion...")
 
-    # 1. Create an array of suffixes: ['_copy1', '_copy2', ... '_copy20']
-    suffixes = array(*[lit(f"_copy{i}") for i in range(1, multiplier + 1)])
+    # 1. Creating an array of suffixes: ['customer_id_1', '_2', ... '_20']
+    suffixes = array(*[lit(f"_{i}") for i in range(1, multiplier + 1)])
 
-    # 2. Explode the array to multiply the rows, then append the suffix to user_id
-    # If events.csv uses 'customer_id'
+    # 2. Explode the array to multiply the rows, then append the suffix to customer_id
     massive_events = events_raw.withColumn("suffix", explode(suffixes)) \
         .withColumn("customer_id", concat(col("customer_id"), col("suffix"))) \
         .drop("suffix")
 
-    # If transactions.csv uses 'customer_id'
     massive_orders = orders_raw.withColumn("suffix", explode(suffixes)) \
         .withColumn("customer_id", concat(col("customer_id"), col("suffix"))) \
         .drop("suffix")
