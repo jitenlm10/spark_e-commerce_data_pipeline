@@ -91,7 +91,7 @@ To view the final business metrics (Conversion Funnels, Revenue Attribution, and
 
 1. Check the terminal where you initially ran the `docker-compose` command. Look for a log line that says `Jupyter Server is running at:`.
 2. Copy the URL provided in the logs that looks similar to this: **`http://127.0.0.1:8888/lab?token=<your_unique_token>`** and paste it into your web browser. *(If you closed the terminal window, you can retrieve the link at any time by running `docker logs jupyter`)*.
-3. In the Jupyter web interface, locate and open **`output_visualization.ipynb`**.
+3. In the Jupyter web interface, locate notebook folder and open **`output_visualization.ipynb`**.
 4. In the top menu bar, click **Run > Run All Cells** (or the double-play `Restart & Run All` button).
 5. Pandas and Matplotlib will ingest the finalized PySpark outputs to instantly generate the analytical charts and the distributed scaling performance comparisons.
 
