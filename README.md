@@ -10,7 +10,7 @@
 2. **Create the Data Folder:** Create a new folder named `data` in the root directory of this project.
 3. **Insert the Files:** Extract the downloaded files and place `events.csv`, `transactions.csv`, and `products.csv` directly into the `data` folder.
 
-Your final repository structure should look exactly like this before execution:
+Your repository structure should look  like this before pipeline execution:
 
 ```text
 📦 project_root
@@ -27,7 +27,6 @@ Your final repository structure should look exactly like this before execution:
  ┃ ┗ 📜 anomaly_detection.py   # Stage 5
  ┣ 📜 docker-compose.yml       # Cluster infrastructure definition
  ┣ 📜 run_pipeline.ps1         # Pipeline orchestrator
- ┣ 📜 output_visualization.ipynb # Final business visualizations
  ┗ 📜 .gitignore               # Excludes local dependencies
 ```
 *(Note: The `/cleaned` and `/output` folders will be generated automatically by the pipeline during execution).*
