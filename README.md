@@ -99,7 +99,7 @@ To view the final business metrics (Conversion Funnels, Revenue Attribution, and
 ```
 ```
 
-#Frontend
+# Frontend
 
 # Spark E-Commerce Data Pipeline
 
